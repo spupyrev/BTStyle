@@ -136,9 +136,10 @@ public:
 		cout << "Allowed options:";
 		for (auto opt : allowedOptionsOrder)
 		{
-			cout << endl;
-
 			string name = allowedOptions.find(opt)->first;
+			if (name.length() == 0) continue;
+
+			cout << endl;
 			cout << "  " << name;
 			if (allowedValues.count(name))
 			{

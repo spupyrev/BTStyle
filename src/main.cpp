@@ -1,7 +1,6 @@
 #include "bib_parser.h"
 #include "cmd_options.h"
 #include "logger.h"
-#include "memory_utils.h"
 
 void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 {
@@ -92,39 +91,28 @@ void ProcessBibInfo(const CMDOptions& options, BibDatabase& db)
 	db.LogDetails();
 }
 
-int run(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	auto options = unique_ptr<CMDOptions>(new CMDOptions());
-	PrepareCMDOptions(argc, argv, *options);
-	Logger::SetLogLevel(options->getOption("--log-level"));
-
-	BibParser parser;
+	auto parser = unique_ptr<BibParser>(new BibParser());
 	auto db = unique_ptr<BibDatabase>(new BibDatabase());
 
+	int returnCode = 0;
 	try
 	{
-		parser.Read(options->getOption(""), *db);
+		PrepareCMDOptions(argc, argv, *options);
+		Logger::SetLogLevel(options->getOption("--log-level"));
+
+		parser->Read(options->getOption(""));
 
 		ProcessBibInfo(*options, *db);
 
-		parser.Write(options->getOption(""), *db);
+		parser->Write(options->getOption(""), *db);
 	}
 	catch (int code)
 	{
-		return code;
+		returnCode = code;
 	}
-
-	return 0;
-}
-
-int main(int argc, char** argv)
-{
-	double initialMemory = memory_utils::GetWorkingSetSizeMB();
-
-	int returnCode = run(argc, argv);
-
-	double finalMemory = memory_utils::GetWorkingSetSizeMB();
-	cerr << "Memory usage: " << (finalMemory - initialMemory) << "MB" << endl;
 
 	return returnCode;
 }
