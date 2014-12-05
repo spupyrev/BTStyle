@@ -1,18 +1,14 @@
 BTStyle
 =======
 
-BibTex formatter
+BibTeX formatter
 
 Usage: BTStyle [options] input.bib
        BTStyle [options] < input.bib > output.bib
 
-When processing a specific bib file, the result OVERWRITES the input file;
-the original file is renamed by adding a suffix ".orig".
+When processing a specific bib file, the result is saved in a new file with the suffix ".new"
 
 Allowed options:
-  
-  Input file name
-
   --field-delimeters=[braces|quotes]
   Convert outer delimeters in field values to either braces or double quotes
 
@@ -27,6 +23,9 @@ Allowed options:
 
   --keys=[alpha|abstract]
   Modify entry keys according to the specified style
+
+  --keys-tex
+  If --keys option is specified, then all the Bbb entries are modified in the provided TeX file
 
   --sort=[author|year-asc|year-desc]
   Sort entries according to the specified style

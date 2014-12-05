@@ -23,7 +23,7 @@ private:
 	BibDatabase& operator = (const BibDatabase&);
 
 	BibEntry* FindEntryByKey(const string& key) const;
-	string ConvertKey(const string& option, const BibEntry* entry, const vector<Author>& authors) const;
+	string GenerateKey(const string& option, const BibEntry* entry, const vector<Author>& authors) const;
 	string GetYear(const BibEntry* entry) const;
 	void FixPadding(BibEntry* entry, const string& tag) const;
 
@@ -38,7 +38,8 @@ public:
 	void FixPagesDash() const;
 	void FixPadding() const;
 	void CheckRequiredFields() const;
-	void ConvertKeys(const string& option) const;
+	void ConvertKeys(const string& option, const string& texFile) const;
+	void ConvertTexKeys(const string& texFile, map<string, BibEntry*>& oldKeys2Entry) const;
 	void SortEntries(const string& option);
 	void FormatAuthor(const string& option) const;
 };

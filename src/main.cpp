@@ -7,8 +7,7 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 	string msg;
 	msg += "Usage: BTStyle [options] input.bib\n";
 	msg += "       BTStyle [options] < input.bib > output.bib\n\n";
-	msg += "When processing a specific bib file, the result OVERWRITES the input file;\n";
-	msg += "the original file is renamed by adding a suffix \".orig\".\n";
+	msg += "When processing a specific bib file, the result is saved in a new file with the suffix \".new\"\n";
 	args.SetUsageMessage(msg);
 
 	args.AddAllowedOption("", "", "Input file name");
@@ -26,6 +25,8 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 	args.AddAllowedOption("--keys", "", "Modify entry keys according to the specified style");
 	args.AddAllowedValue("--keys", "alpha");
 	args.AddAllowedValue("--keys", "abstract");
+
+	args.AddAllowedOption("--keys-tex", "", "If --keys option is specified, then all the Bbb entries are modified in the provided TeX file");
 
 	args.AddAllowedOption("--sort", "", "Sort entries according to the specified style");
 	args.AddAllowedValue("--sort", "author");
@@ -82,7 +83,7 @@ void ProcessBibInfo(const CMDOptions& options, BibDatabase& db)
 
 	string keys = options.getOption("--keys");
 	if (keys != "")
-		db.ConvertKeys(keys);
+		db.ConvertKeys(keys, options.getOption("--keys-tex"));
 
 	string sort = options.getOption("--sort");
 	if (sort != "")
@@ -103,7 +104,7 @@ int main(int argc, char** argv)
 		PrepareCMDOptions(argc, argv, *options);
 		Logger::SetLogLevel(options->getOption("--log-level"));
 
-		parser->Read(options->getOption(""));
+		parser->Read(options->getOption(""), *db);
 
 		ProcessBibInfo(*options, *db);
 

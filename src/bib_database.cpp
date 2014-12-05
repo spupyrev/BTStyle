@@ -6,6 +6,8 @@
 
 #include <cassert>
 #include <algorithm>
+#include <fstream>
+#include <regex>
 
 using namespace string_utilities;
 
@@ -200,15 +202,22 @@ void BibDatabase::CheckRequiredFields() const
 	}
 }
 
-void BibDatabase::ConvertKeys(const string& option) const
+void BibDatabase::ConvertKeys(const string& option, const string& texFile) const
 {
 	assert(option == "alpha" || option == "abstract");
 
 	set<string> allKeys;
+	map<string, BibEntry*> oldKeys2Entry;
 	for (auto entry: entries)
 	{
+		if (oldKeys2Entry.count(entry->key))
+		{
+			Logger::Warning("duplicate key " + entry->key);
+		}
+		oldKeys2Entry[to_lower(entry->key)] = entry;
+
 		if (!entry->fields.count("author")) continue;
-		string nvalue = ConvertKey(option, entry, entry->getAuthors());
+		string nvalue = GenerateKey(option, entry, entry->getAuthors());
 
 		if (allKeys.count(nvalue) > 0)
 		{
@@ -230,9 +239,12 @@ void BibDatabase::ConvertKeys(const string& option) const
 			entry->key = nvalue;
 		}
 	}
+
+	if (texFile != "")
+		ConvertTexKeys(texFile, oldKeys2Entry);
 }
 
-string BibDatabase::ConvertKey(const string& option, const BibEntry* entry, const vector<Author>& authors) const
+string BibDatabase::GenerateKey(const string& option, const BibEntry* entry, const vector<Author>& authors) const
 {
 	if (option == "alpha")
 	{
@@ -240,7 +252,18 @@ string BibDatabase::ConvertKey(const string& option, const BibEntry* entry, cons
 		if ((int)year.length() == 4) year = year.substr(2, 2);
 		string author;
 		if (authors.empty()) author = "";
-		else if ((int)authors.size() == 1) author = authors[0].last.substr(0, 3);
+		else if ((int)authors.size() == 1) 
+		{
+			size_t i = 0;
+			string s = "";
+			while (i < authors[0].last.length() && s.length() < 3)
+			{
+				if (isalpha(authors[0].last[i]))
+					s += authors[0].last[i];
+				i++;
+			}
+			author = s;
+		}
 		else
 		{
 			for (int i = 0; i < (int)authors.size() && i < 5; i++)
@@ -263,6 +286,69 @@ string BibDatabase::ConvertKey(const string& option, const BibEntry* entry, cons
 
 	return "";
 }
+
+void BibDatabase::ConvertTexKeys(const string& texFile, map<string, BibEntry*>& oldKeys2Entry) const
+{
+	// reading
+	ifstream is;
+	is.open(texFile.c_str(), ios::in);
+	Logger::Error(is != 0, "can't open tex file '" + texFile + "'");
+	string s((istreambuf_iterator<char>(is)), istreambuf_iterator<char>());
+	is.close();
+
+	// replacing
+	int replacedCount = 0, keptCount = 0;
+	regex re("\\\\cite(\\s*)\\{([^\\{\\}])*\\}");
+    string result;
+    auto callback = [&](const string& m) 
+	{
+		if (!regex_match(m, re))
+		{
+			result += m;
+			return;
+		}
+
+		result += "\\cite{";
+
+		int firstBracket = m.find_first_of('{');
+		int lastBracket = m.find_last_of('}');
+		string refString = m.substr(firstBracket + 1, lastBracket - firstBracket - 1);
+		vector<string> refs = split(refString, ",");
+		for (int i = 0; i < (int)refs.size(); i++)
+		{
+			if (i != 0) result += ",";
+
+			string t = to_lower(trim(refs[i]));
+			if (oldKeys2Entry.count(t))
+			{
+				result += oldKeys2Entry[t]->key;
+				if (trim(refs[i]) != oldKeys2Entry[t]->key)
+					replacedCount++;
+				else
+					keptCount++;
+			}
+			else
+			{
+				result += refs[i];
+				Logger::Warning("citation " + refs[i] + " from " + texFile + " not found in the database ");
+			}
+		}
+
+		result += "}";
+    };
+
+    sregex_token_iterator begin(s.begin(), s.end(), re, vector_of_ints(-1)(0)()), end;
+    for_each(begin, end, callback);
+	s = result;
+	Logger::Debug("replaced " + to_string(replacedCount) + ", unchanged " + to_string(keptCount) + " citation keys in " + texFile);
+
+	// output
+	ofstream os;
+	os.open((texFile + ".new").c_str(), ios::out);
+	os << s;
+	os.close();
+}
+
 
 string BibDatabase::GetYear(const BibEntry* entry) const
 {

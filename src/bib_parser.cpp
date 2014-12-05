@@ -209,7 +209,7 @@ void BibParser::ParseTag(const string& key, const string& s, string& tag, string
 	Logger::Error(equalIndex != string::npos, "inavlid field '" + s + "' in " + key);
 
 	tag = trim(s.substr(0, equalIndex));
-	transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
+	tag = to_lower(tag);
 
 	value = trim(s.substr(equalIndex + 1));
 
@@ -231,16 +231,10 @@ void BibParser::Write(const string& filename, const BibDatabase& db) const
 {
 	if (filename != "")
 	{
-		if (db.inputFilename == filename)
-		{
-			ifstream src(filename.c_str(), ios::binary);
-			ofstream dst((filename + ".orig").c_str(), ios::binary);
-			dst << src.rdbuf();
-		}
-
 		ofstream fileStream;
-		fileStream.open(filename.c_str(), ios::out);
-		Logger::Error(fileStream != 0, "can't create output file '" + filename + "'");
+		string newfile = filename + ".new";
+		fileStream.open(newfile.c_str(), ios::out);
+		Logger::Error(fileStream != 0, "can't create output file '" + newfile + "'");
 		Write(fileStream, db);
 		fileStream.close();
 	}

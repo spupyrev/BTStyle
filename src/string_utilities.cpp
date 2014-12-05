@@ -1,6 +1,7 @@
 #include "string_utilities.h"
 
 #include <sstream>
+#include <algorithm>
 
 namespace string_utilities {
 
@@ -100,6 +101,14 @@ bool isInteger(const string& s)
 	if (!ss) return false;
 	return (ss.rdbuf()->in_avail() == 0);
 	//return all_of(s.begin(), s.end(), ::isdigit);
+}
+
+string to_lower(const string& s)
+{
+	string res = s;
+	transform(res.begin(), res.end(), res.begin(), ::tolower);
+
+	return res;
 }
 
 };
