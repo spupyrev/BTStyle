@@ -44,12 +44,54 @@ void BibDatabase::LogDetails() const
 	Logger::Info(trim(msg));
 }
 
-BibEntry* BibDatabase::FindEntryByKey(const string& key) const
+void BibDatabase::InitKeyEntryMap()
+{
+	keyEntryMap.clear();
+	for (auto entry: entries)
+	{
+		string lkey = to_lower(entry->key);
+		if (keyEntryMap.count(lkey))
+			Logger::Warning("duplicate key " + entry->key);
+		else
+			keyEntryMap[lkey] = entry;
+	}
+}
+
+void BibDatabase::InitRefEntries() const
 {
 	for (auto entry: entries)
-		if (key == entry->key) return entry;
+	{
+		if (entry->fields.count("crossref"))
+		{
+			string ref = unquote(entry->fields["crossref"]);
+			if (!keyEntryMap.count(ref))
+			{
+				Logger::Warning("non-existing crossref '" + ref + "' in " + entry->key);
+			}
+			else
+			{
+				entry->refEntry = keyEntryMap.find(ref)->second;
+			}
+		}
+	}
+}
 
-	return NULL;
+void BibDatabase::CheckRequiredFields() const
+{
+	for (auto entry: entries)
+	{
+		vector<string> required = BibEntry::GetRequiredFields(entry->type);
+		set<string> listed = entry->getFields();
+		for (string f : required)
+		{
+			vector<string> fs = split(f, "|");
+			bool fieldFound = false;
+			for (string s : fs)
+				fieldFound |= (listed.count(s) > 0);
+
+			Logger::Warning(fieldFound, "missing required field '" + f + "' in " + entry->key);
+		}
+	}
 }
 
 void BibDatabase::ConvertFieldDelimeters(const string& option) const
@@ -64,26 +106,18 @@ void BibDatabase::ConvertFieldDelimeters(const string& option) const
 
 	for (auto en: entries)
 	{
-		for (auto tag: en->fields)
+		for (auto field: en->fields)
 		{
-			string key = tag.first;
-			string value = tag.second;
+			string tag = field.first;
+			string value = field.second;
 
-			int len = value.length();
+			string nvalue;
+			if (tag == "title")
+				nvalue = openQ + unquote(unquote(value)) + closeQ;
+			else
+				nvalue = openQ + unquote(value) + closeQ;
 
-			if ((value[0] == '{' || value[0] == '"') && (value[len - 1] == '}' || value[len - 1] == '"'))
-			{
-				value[0] = openQ;
-				value[len - 1] = closeQ;
-
-				en->fields[key] = value;
-			}
-			else if (isInteger(value))
-			{
-				value = openQ + value + closeQ;
-
-				en->fields[key] = value;
-			}
+			en->fields[tag] = nvalue;
 		}
 	}
 }
@@ -171,84 +205,52 @@ void BibDatabase::FixPadding(BibEntry* entry, const string& tag) const
 	}
 }
 
-void BibDatabase::CheckRequiredFields() const
-{
-	for (auto entry: entries)
-	{
-		vector<string> required = BibEntry::GetRequiredFields(entry->type);
-		set<string> listed = entry->getFields();
-		if (entry->fields.count("crossref"))
-		{
-			string ref = unquote(entry->fields["crossref"]);
-			BibEntry* refEntry = FindEntryByKey(ref);
-			if (refEntry == NULL)
-			{
-				Logger::Warning("non-existing crossref '" + ref + "' in " + entry->key);
-				continue;
-			}
-			set<string> listedRef = refEntry->getFields();
-			listed.insert(listedRef.begin(), listedRef.end());
-		}
-
-		for (string f : required)
-		{
-			vector<string> fs = split(f, "|");
-			bool fieldFound = false;
-			for (string s : fs)
-				fieldFound |= (listed.count(s) > 0);
-
-			Logger::Warning(fieldFound, "missing required field '" + f + "' in " + entry->key);
-		}
-	}
-}
-
-void BibDatabase::ConvertKeys(const string& option, const string& texFile) const
+void BibDatabase::ConvertKeys(const string& option, const string& texFile)
 {
 	assert(option == "alpha" || option == "abstract");
 
-	set<string> allKeys;
-	map<string, BibEntry*> oldKeys2Entry;
+	map<string, vector<BibEntry*> > key2Entries;
 	for (auto entry: entries)
 	{
-		if (oldKeys2Entry.count(entry->key))
+		if (!entry->fields.count("author")) 
 		{
-			Logger::Warning("duplicate key " + entry->key);
+			key2Entries[entry->key].push_back(entry);
+			continue;
 		}
-		oldKeys2Entry[to_lower(entry->key)] = entry;
 
-		if (!entry->fields.count("author")) continue;
 		string nvalue = GenerateKey(option, entry, entry->getAuthors());
+		key2Entries[nvalue].push_back(entry);
+	}
 
-		if (allKeys.count(nvalue) > 0)
+	for (auto it: key2Entries)
+	{
+		string key = it.first;
+		vector<BibEntry*> entries = it.second;
+		for (int i = 0; i < (int)entries.size(); i++)
 		{
-			for (char c = 'a'; c <= 'z'; c++)
+			BibEntry* entry = entries[i];
+			string nvalue = key;
+			if (entries.size() > 1) nvalue += char('a' + i);
+
+			if (entry->key != nvalue)
 			{
-				string ss = nvalue + c;
-				if (!allKeys.count(ss))
-				{
-					nvalue = ss;
-					break;
-				}
+				Logger::Debug("modified key in " + entry->key + " to '" + nvalue + "'");
+				entry->key = nvalue;
 			}
-		}
-
-		allKeys.insert(nvalue);
-		if (entry->key != nvalue)
-		{
-			Logger::Debug("modified key in " + entry->key + " to '" + nvalue + "'");
-			entry->key = nvalue;
 		}
 	}
 
 	if (texFile != "")
-		ConvertTexKeys(texFile, oldKeys2Entry);
+		ConvertTexKeys(texFile);
+
+	InitKeyEntryMap();
 }
 
 string BibDatabase::GenerateKey(const string& option, const BibEntry* entry, const vector<Author>& authors) const
 {
 	if (option == "alpha")
 	{
-		string year = GetYear(entry);
+		string year = entry->getYear();
 		if ((int)year.length() == 4) year = year.substr(2, 2);
 		string author;
 		if (authors.empty()) author = "";
@@ -269,14 +271,15 @@ string BibDatabase::GenerateKey(const string& option, const BibEntry* entry, con
 			for (int i = 0; i < (int)authors.size() && i < 5; i++)
 				if (authors[i].last != "others")	
 					author += authors[i].last[0];
-			if ((int)authors.size() > 5) author += "+";
+			if ((int)authors.size() > 6) author += "+";
+			else if ((int)authors.size() == 6) author += authors[5].last[0];
 		}
 
 		return author + year;
 	}
 	else if (option == "abstract")
 	{
-		string year = GetYear(entry);
+		string year = entry->getYear();
 		string first_author = (authors.empty() ? "" : split(authors[0].last, " ")[0]);
 
 		if (year != "")
@@ -287,7 +290,7 @@ string BibDatabase::GenerateKey(const string& option, const BibEntry* entry, con
 	return "";
 }
 
-void BibDatabase::ConvertTexKeys(const string& texFile, map<string, BibEntry*>& oldKeys2Entry) const
+void BibDatabase::ConvertTexKeys(const string& texFile)
 {
 	// reading
 	ifstream is;
@@ -319,10 +322,10 @@ void BibDatabase::ConvertTexKeys(const string& texFile, map<string, BibEntry*>& 
 			if (i != 0) result += ",";
 
 			string t = to_lower(trim(refs[i]));
-			if (oldKeys2Entry.count(t))
+			if (keyEntryMap.count(t))
 			{
-				result += oldKeys2Entry[t]->key;
-				if (trim(refs[i]) != oldKeys2Entry[t]->key)
+				result += keyEntryMap[t]->key;
+				if (trim(refs[i]) != keyEntryMap[t]->key)
 					replacedCount++;
 				else
 					keptCount++;
@@ -349,22 +352,6 @@ void BibDatabase::ConvertTexKeys(const string& texFile, map<string, BibEntry*>& 
 	os.close();
 }
 
-
-string BibDatabase::GetYear(const BibEntry* entry) const
-{
-	if (entry->fields.count("year") > 0)
-		return entry->getYear();
-
-	if (entry->fields.count("crossref") > 0)
-	{
-		string ref = unquote(entry->fields.find("crossref")->second);
-		BibEntry* refEntry = FindEntryByKey(ref);
-		if (refEntry != NULL && refEntry->fields.count("year") > 0)
-			return refEntry->getYear();
-	}
-
-	return "";
-}
 
 void BibDatabase::FormatAuthor(const string& option) const
 {
@@ -404,10 +391,12 @@ void BibDatabase::FormatAuthor(const string& option) const
 
 void BibDatabase::SortEntries(const string& option)
 {
-	assert(option == "author" || option == "year-asc" || option == "year-desc");
+	assert(option == "author" || option == "title" || option == "year-asc" || option == "year-desc");
 
 	if (option == "author")
 		stable_sort(entries.begin(), entries.end(), BibEntry::AuthorComparator);
+	else if (option == "title")
+		stable_sort(entries.begin(), entries.end(), BibEntry::TitleComparator);
 	else if (option == "year-asc")
 		stable_sort(entries.begin(), entries.end(), BibEntry::YearAscComparator);
 	else if (option == "year-desc")

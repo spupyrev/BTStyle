@@ -23,6 +23,7 @@ class BibEntry
 	string type;
 	string key;
 	map<string, string> fields;
+	BibEntry* refEntry;
 
 	mutable vector<Author> authors;
 
@@ -34,11 +35,12 @@ private:
 	Author ParseAuthor(const string& s) const;
 
 public:
-	BibEntry(const string& type, const string& key): type(type), key(key) {}
+	BibEntry(const string& type, const string& key): type(type), key(key), refEntry(nullptr) {}
 	~BibEntry() {}
 
 	set<string> getFields() const;
 	string getYear() const;
+	string getTitle() const;
 	vector<Author> getAuthors() const;
 
 // static section
@@ -53,6 +55,7 @@ public:
 
 	static bool TagComparator(const string& s1, const string& s2);
 	static bool AuthorComparator(const BibEntry* s1, const BibEntry* s2);
+	static bool TitleComparator(const BibEntry* s1, const BibEntry* s2);
 	static bool YearAscComparator(const BibEntry* s1, const BibEntry* s2);
 	static bool YearDescComparator(const BibEntry* s1, const BibEntry* s2);
 };

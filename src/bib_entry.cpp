@@ -93,6 +93,16 @@ bool BibEntry::AuthorComparator(const BibEntry* e1, const BibEntry* e2)
 	return false;
 }
 
+bool BibEntry::TitleComparator(const BibEntry* e1, const BibEntry* e2)
+{
+	string title1 = e1->getTitle();
+	string title2 = e2->getTitle();
+	if (title1 == title2)
+		return YearAscComparator(e1, e2);
+
+	return (title1 < title2);
+}
+
 bool BibEntry::YearAscComparator(const BibEntry* e1, const BibEntry* e2)
 {
 	string year1 = e1->getYear();
@@ -132,18 +142,39 @@ set<string> BibEntry::getFields() const
 	set<string> res;
 	for (auto f : fields)
 		res.insert(f.first);
+
+	if (refEntry != nullptr)
+	{
+		for (auto f : refEntry->fields)
+			res.insert(f.first);
+	}
+
 	return res;
 }
 
 string BibEntry::getYear() const
 {
-	if (!fields.count("year")) return "";
-	return unquote(fields.find("year")->second);
+	if (fields.count("year")) 
+		return unquote(fields.find("year")->second);
+
+	if (refEntry != nullptr && refEntry->fields.count("year"))
+		return unquote(refEntry->fields.find("year")->second);
+
+	return "";
+}
+
+string BibEntry::getTitle() const
+{
+	if (fields.count("title")) 
+		return unquote(fields.find("title")->second);
+
+	return "";
 }
 
 vector<Author> BibEntry::getAuthors() const
 {
-	if (!fields.count("author")) return authors;
+	if (!fields.count("author")) 
+		return authors;
 
 	if (authors.empty())
 	{

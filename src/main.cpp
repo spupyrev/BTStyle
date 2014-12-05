@@ -30,6 +30,7 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 
 	args.AddAllowedOption("--sort", "", "Sort entries according to the specified style");
 	args.AddAllowedValue("--sort", "author");
+	args.AddAllowedValue("--sort", "title");
 	args.AddAllowedValue("--sort", "year-asc");
 	args.AddAllowedValue("--sort", "year-desc");
 
@@ -62,6 +63,8 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 
 void ProcessBibInfo(const CMDOptions& options, BibDatabase& db)
 {
+	db.InitKeyEntryMap();
+	db.InitRefEntries();
 	db.CheckRequiredFields();
 
 	string fieldDelimeters = options.getOption("--field-delimeters");
