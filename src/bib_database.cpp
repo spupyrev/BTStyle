@@ -115,7 +115,14 @@ void BibDatabase::ConvertFieldDelimeters(const string& option) const
 			if (tag == "title")
 				nvalue = openQ + unquote(unquote(value)) + closeQ;
 			else
-				nvalue = openQ + unquote(value) + closeQ;
+			{
+				string oldOQ, oldCQ;
+				string unq = unquote(value, oldOQ, oldCQ);
+				if (oldOQ != "" && oldCQ != "")
+					nvalue = openQ + unq + closeQ;
+				else
+					nvalue = value;
+			}
 
 			en->fields[tag] = nvalue;
 		}

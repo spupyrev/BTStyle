@@ -97,7 +97,7 @@ void ProcessBibInfo(const CMDOptions& options, BibDatabase& db)
 
 int main(int argc, char** argv)
 {
-	auto options = unique_ptr<CMDOptions>(new CMDOptions());
+	auto options = CMDOptions::Create();
 	auto parser = unique_ptr<BibParser>(new BibParser());
 	auto db = unique_ptr<BibDatabase>(new BibDatabase());
 
