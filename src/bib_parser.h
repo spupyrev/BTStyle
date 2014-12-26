@@ -9,9 +9,15 @@ using namespace std;
 
 class BibParser
 {
-public:
+	BibParser(const BibParser&);
+	BibParser& operator = (const BibParser&);
 	BibParser() {}
-	~BibParser() {}
+
+public:
+	static unique_ptr<BibParser> Create()
+	{
+		return unique_ptr<BibParser>(new BibParser());
+	}
 
 	void Read(const string& filename, BibDatabase& db) const;
 	void Write(const string& filename, const BibDatabase& db) const;

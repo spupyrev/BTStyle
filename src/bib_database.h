@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "bib_entry.h"
 
@@ -23,12 +24,17 @@ class BibDatabase
 private:
 	BibDatabase(const BibDatabase&);
 	BibDatabase& operator = (const BibDatabase&);
+	BibDatabase() {};
 
 	string GenerateKey(const string& option, const BibEntry* entry, const vector<Author>& authors) const;
 	void FixPadding(BibEntry* entry, const string& tag) const;
 
 public:
-	BibDatabase();
+	static unique_ptr<BibDatabase> Create()
+	{
+		return unique_ptr<BibDatabase>(new BibDatabase());
+	}
+
 	~BibDatabase();
 
 	void LogDetails() const;

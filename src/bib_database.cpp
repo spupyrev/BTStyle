@@ -11,10 +11,6 @@
 
 using namespace string_utilities;
 
-BibDatabase::BibDatabase()
-{
-}
-
 BibDatabase::~BibDatabase()
 {
 	for (auto m : entries)
@@ -64,13 +60,14 @@ void BibDatabase::InitRefEntries() const
 		if (entry->fields.count("crossref"))
 		{
 			string ref = unquote(entry->fields["crossref"]);
-			if (!keyEntryMap.count(ref))
+			string lref = to_lower(ref);
+			if (!keyEntryMap.count(lref))
 			{
 				Logger::Warning("non-existing crossref '" + ref + "' in " + entry->key);
 			}
 			else
 			{
-				entry->refEntry = keyEntryMap.find(ref)->second;
+				entry->refEntry = keyEntryMap.find(lref)->second;
 			}
 		}
 	}
@@ -260,7 +257,11 @@ string BibDatabase::GenerateKey(const string& option, const BibEntry* entry, con
 		string year = entry->getYear();
 		if ((int)year.length() == 4) year = year.substr(2, 2);
 		string author;
-		if (authors.empty()) author = "";
+
+		if (authors.empty()) 
+		{
+			author = "";
+		}
 		else if ((int)authors.size() == 1) 
 		{
 			size_t i = 0;
@@ -277,7 +278,13 @@ string BibDatabase::GenerateKey(const string& option, const BibEntry* entry, con
 		{
 			for (int i = 0; i < (int)authors.size() && i < 5; i++)
 				if (authors[i].last != "others")	
-					author += authors[i].last[0];
+				{
+					size_t j = 0;
+					while (j < authors[i].last.length() && !isalpha(authors[i].last[j]))
+						j++;
+					if (j < authors[i].last.length())
+						author += authors[i].last[j];
+				}
 			if ((int)authors.size() > 6) author += "+";
 			else if ((int)authors.size() == 6) author += authors[5].last[0];
 		}
