@@ -8,6 +8,7 @@ using namespace std;
 
 namespace string_utilities {
 
+bool startsWith(const string& s, const string& prefix);
 string trim(const string& line);
 string replace(const string& s, const string& search, const string& replace);
 vector<string> split(const string& s, const string& c); 

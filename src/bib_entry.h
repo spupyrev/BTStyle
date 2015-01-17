@@ -19,6 +19,7 @@ class BibEntry
 {
 	friend class BibParser;
 	friend class BibDatabase;
+	friend class DBLPDatabase;
 
 	string type;
 	string key;

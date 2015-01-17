@@ -129,6 +129,33 @@ void BibParser::ParseItem(const string& s, BibDatabase& info) const
 	}
 }
 
+BibEntry* BibParser::ParseBibEntry(const string& ss) const
+{
+	string s = trim(ss);
+	if (s.length() == 0 || s[0] != '@')
+		throw runtime_error("input string doesn't start with @");
+
+	string type, content;
+	ParseTypeContent(s, type, content);
+
+	if (!BibEntry::IsValidEntry(type))
+		throw runtime_error("invalid type of entry '" + type + "'");
+
+	vector<string> kv = SplitTags(content);
+	if (kv.empty())
+		throw runtime_error("invalid entry '" + s + "'");
+
+	string key = kv[0];
+	BibEntry* entry = new BibEntry(type, key);
+	for (int i = 1; i < (int)kv.size(); i++)
+	{
+		string tag, value;
+		ParseTag(key, kv[i], tag, value);
+		entry->fields[tag] = value;
+	}
+	return entry;
+}
+
 void BibParser::ParseTypeContent(const string& s, string& type, string& content) const
 {
 	assert(s[0] == '@');

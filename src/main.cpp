@@ -26,7 +26,7 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 	args.AddAllowedValue("--keys", "alpha");
 	args.AddAllowedValue("--keys", "abstract");
 
-	args.AddAllowedOption("--keys-tex", "", "If --keys option is specified, then all the Bbb entries are modified in the provided TeX file");
+	args.AddAllowedOption("--keys-tex", "", "If --keys option is specified, then all the Bib entries are modified in the provided TeX file");
 
 	args.AddAllowedOption("--sort", "", "Sort entries according to the specified style");
 	args.AddAllowedValue("--sort", "author");
@@ -37,6 +37,8 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 	args.AddAllowedOption("--format-author", "", "Format author names to either space-separated (First Last) or comma-separated (Last, First) format");
 	args.AddAllowedValue("--format-author", "space");
 	args.AddAllowedValue("--format-author", "comma");
+
+	args.AddAllowedOption("--sync-dblp", "", "Synchronize entries with the specified dblp database");
 
 	args.AddAllowedOption("--log-level", "info", "Log level");
 	args.AddAllowedValue("--log-level", "debug");
@@ -56,7 +58,6 @@ void PrepareCMDOptions(int argc, char** argv, CMDOptions& args)
 		args.SetOption("--fix-padding");
 		args.SetOption("--log-level=debug");
 		args.SetOption("--format-author=space");
-		//args.SetOption("--keys=alpha");
 		args.SetOption("--sort=year-desc");
 	}
 } 
@@ -66,6 +67,10 @@ void ProcessBibInfo(const CMDOptions& options, BibDatabase& db)
 	db.InitKeyEntryMap();
 	db.InitRefEntries();
 	db.CheckRequiredFields();
+
+	string dblpDBFile = options.getOption("--sync-dblp");
+	if (dblpDBFile != "")
+		db.SyncDBLP(dblpDBFile);
 
 	string fieldDelimeters = options.getOption("--field-delimeters");
 	if (fieldDelimeters != "")

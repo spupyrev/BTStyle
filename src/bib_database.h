@@ -51,5 +51,6 @@ public:
 	void ConvertTexKeys(const string& texFile);
 	void SortEntries(const string& option);
 	void FormatAuthor(const string& option) const;
+	void SyncDBLP(const string& dbFile) const;
 };
 

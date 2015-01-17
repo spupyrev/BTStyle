@@ -24,6 +24,10 @@ const string BibEntry::TAG_ORDER[] = {
 		"organization",
 		"institution",
 		"howpublished",
+		"isbn",
+		"url",
+		"ee",
+		"doi",
 };
 
 const map<string, vector<string> > BibEntry::REQUIRED_FIELDS = BibEntry::InitRequiredField();

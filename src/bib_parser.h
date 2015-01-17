@@ -22,6 +22,8 @@ public:
 	void Read(const string& filename, BibDatabase& db) const;
 	void Write(const string& filename, const BibDatabase& db) const;
 
+	BibEntry* ParseBibEntry(const string& s) const;
+
 private:
 	//reading
 	void Read(istream& is, BibDatabase& db) const;

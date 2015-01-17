@@ -5,6 +5,12 @@
 
 namespace string_utilities {
 
+bool startsWith(const string& s, const string& prefix)
+{
+	if (s.length() < prefix.length()) return false;
+	return (s.find(prefix) == 0);
+}
+
 string trim(const string& line)
 {
 	if (line.length() == 0) return line;
