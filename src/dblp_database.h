@@ -31,7 +31,7 @@ private:
 
 	vector<DBLPEntry> findByTitle(const string& title) const;
 	DBLPEntry findByKey(const string& key) const;
-	BibEntry* CreateBibEntry(const DBLPEntry& dblpEntry, const BibParser& parser) const;
+	unique_ptr<BibEntry> CreateBibEntry(const DBLPEntry& dblpEntry, const BibParser& parser) const;
 	BibEntry* FilterDBLPEntries(vector<BibEntry*> entries, BibEntry* entry) const;
 	void FilterDBLPEntriesByAuthor(vector<BibEntry*>& entries, BibEntry* entry) const;
 	void FilterDBLPEntriesByYear(vector<BibEntry*>& entries, BibEntry* entry) const;

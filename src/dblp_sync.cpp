@@ -81,12 +81,12 @@ void DBLPDatabase::Sync(BibEntry* entry, const BibParser& parser) const
 	}
 
 	// construct bib entries
+	vector<unique_ptr<BibEntry>> ptrBibDBLPEntries;
 	vector<BibEntry*> bibDBLPEntries;
 	for (auto e : dblpEntry)
 	{
-		auto en = CreateBibEntry(e, parser);
-		assert(en != nullptr);
-		bibDBLPEntries.push_back(en);
+		ptrBibDBLPEntries.push_back(CreateBibEntry(e, parser));
+		bibDBLPEntries.push_back(ptrBibDBLPEntries.back().get());
 	}
 
 	// break ties (using author, year, etc)
@@ -103,10 +103,6 @@ void DBLPDatabase::Sync(BibEntry* entry, const BibParser& parser) const
 			entry->fields[tag] = bibDBLPEntry->fields[tag];
 		}
 	}
-
-	// remove (TODO)
-	for (auto en : bibDBLPEntries)
-		delete en;
 }
 
 BibEntry* DBLPDatabase::FilterDBLPEntries(vector<BibEntry*> entries, BibEntry* entry) const
@@ -205,11 +201,11 @@ void DBLPDatabase::FilterDBLPEntriesByType(vector<BibEntry*>& entries, BibEntry*
 		}), end(entries));
 }
 
-BibEntry* DBLPDatabase::CreateBibEntry(const DBLPEntry& dblpEntry, const BibParser& parser) const
+unique_ptr<BibEntry> DBLPDatabase::CreateBibEntry(const DBLPEntry& dblpEntry, const BibParser& parser) const
 {
 	try
 	{
-		BibEntry* entry = parser.ParseBibEntry(dblpEntry.content);
+		auto entry = unique_ptr<BibEntry>(parser.ParseBibEntry(dblpEntry.content));
 		if (entry->fields.count("crossref"))
 		{
 			string ref = unquote(entry->fields["crossref"]);
@@ -237,8 +233,8 @@ BibEntry* DBLPDatabase::CreateBibEntry(const DBLPEntry& dblpEntry, const BibPars
 
 		//FixLocalURL(entry, "url");
 		entry->fields.erase("url");
-		FixLocalURL(entry, "ee");
-		ExtractDOI(entry);
+		FixLocalURL(entry.get(), "ee");
+		ExtractDOI(entry.get());
 
 		return entry;
 	}

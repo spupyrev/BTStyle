@@ -2,6 +2,7 @@
 
 CXX = g++
 CXXFLAGS = -Isrc -Wall -Wno-unknown-pragmas -O3 -std=c++11
+LDFLAGS = -Lsrc/dblp -lsqlite3
 
 HEADERS = $(wildcard **/*.h)
 
@@ -28,7 +29,7 @@ noomp: $(TARGET)
 $(TARGET): $(OBJECTS)
 	@echo "Linking object files to target $@..."
 	$(CXX) $(LDFLAGS) -o $@ $^
-	@echo "-- Link finished --"
+	@echo -e "\e[0;32m-- Link finished --\e[0m"
 
 ## Generic compilation rule for object files from cpp files
 build/%.o : src/%.cpp $(HEADERS) Makefile
