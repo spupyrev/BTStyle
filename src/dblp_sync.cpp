@@ -162,7 +162,7 @@ void DBLPDatabase::FilterDBLPEntriesByAuthor(vector<BibEntry*>& entries, BibEntr
 				return true;
 
 			for (int i = 0; i < (int)authors.size(); i++)
-				if (to_lower(authors[i].last) != to_lower(authors2[i].last)) 
+				if (to_alpha(to_lower(authors[i].last)) != to_alpha(to_lower(authors2[i].last)))
 					return true;
 
 			return false;

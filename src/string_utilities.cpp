@@ -117,4 +117,16 @@ string to_lower(const string& s)
 	return res;
 }
 
+string to_alpha(const string& s)
+{
+	string res;
+	for (int i = 0; i < (int)s.length(); i++)
+	{
+		auto ch = s[i];
+		if (isalpha(ch))
+			res += tolower(ch);
+	}
+	return res;
+}
+
 };

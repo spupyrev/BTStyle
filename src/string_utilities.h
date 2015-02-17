@@ -16,6 +16,7 @@ bool isInteger(const string& s);
 string unquote(const string& s, string& openQ, string& closeQ); 
 string unquote(const string& s); 
 string to_lower(const string& s); 
+string to_alpha(const string& s);
 
 template <typename T> 
 string to_string(const T& n)

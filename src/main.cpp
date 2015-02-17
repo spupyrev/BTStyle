@@ -123,5 +123,7 @@ int main(int argc, char** argv)
 		returnCode = code;
 	}
 
+	// TODO: report identical entries
+
 	return returnCode;
 }
